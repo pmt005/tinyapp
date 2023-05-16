@@ -27,9 +27,9 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: req.params.longURL};
-  console.log(req.params.id);
-  console.log(req.params.longURL);
+  const shortUrl = req.params.id;
+  const templateVars = { id: shortUrl, longURL: urlDatabase[shortUrl]};
+  
   res.render("urls_show", templateVars);
 });
 
