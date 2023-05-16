@@ -46,18 +46,30 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
+app.get("/u/:id", (req, res) => {
+  const shortUrl = req.params.id;
+  const longUrl = urlDatabase[shortUrl];
+  if (!urlDatabase[shortUrl]) {
+    res.send("shortUrl not found!");
+  }
+  res.redirect(longUrl);
+});
+
 app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
-  const longURL = req.body.longURL;
-  const shortURl = generateString(6);
-  urlDatabase[shortURl] = longURL;
+  let longUrl = req.body.longURL;
+  const shortUrl = generateString(6);
+  if (longUrl.slice(0,6).join !== "http://") {
+    longUrl = "http://" + longUrl;
+  }
+  urlDatabase[shortUrl] = longUrl;
   console.log(urlDatabase);
-  res.send("ok"); // Respond with 'Ok' (we will replace this)
+  res.redirect(`/urls/${shortUrl}`); // Respond with 'Ok' (we will replace this)
 });
 
 app.get("/urls/:id", (req, res) => {
   const shortUrl = req.params.id;
-  const templateVars = { id: shortUrl, longURL: urlDatabase[shortUrl] };
+  const templateVars = { id: shortUrl, longUrl: urlDatabase[shortUrl] };
 
   res.render("urls_show", templateVars);
 });
