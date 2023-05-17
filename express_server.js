@@ -67,6 +67,14 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`); // redirect to page showing longUrl for input shortUrl
 });
 
+
+app.post('/login', (req, res) => {
+  console.log(typeof(req.body.username));
+  res.cookie('username',req.body.username);
+  console.log(req.body.username);
+  res.redirect('/urls');
+});
+
 //EDIT take a key and change the paired value
 app.post('/urls/:id', (req, res) => {
   const shortUrl = req.params.id;
