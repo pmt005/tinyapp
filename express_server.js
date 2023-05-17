@@ -3,17 +3,16 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080; // default port 8080
 const { generateString } = require("./generateString");
+const bodyParser = require('body-parser');
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
+app.use(bodyParser.urlencoded({ extended: false }));
 app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-
-
 
 //show hello message
 app.get("/", (req, res) => {
@@ -27,9 +26,10 @@ app.get("/urls.json", (req, res) => {
 
 //show a urls_index page containing the info of the db
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase,
-    username: req.cookies["username"] };
-  console.log("COOKIE :" +  req.cookies["username"]);
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
   res.render("urls_index", templateVars);
 });
 
@@ -72,11 +72,17 @@ app.post("/urls", (req, res) => {
   res.redirect(`/urls/${shortUrl}`); // redirect to page showing longUrl for input shortUrl
 });
 
-
+//login path
 app.post('/login', (req, res) => {
   console.log(typeof(req.body.username));
   res.cookie('username',req.body.username);
   console.log(req.body.username);
+  res.redirect('/urls');
+});
+
+//logout
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
   res.redirect('/urls');
 });
 
@@ -89,11 +95,11 @@ app.post('/urls/:id', (req, res) => {
 
 // Delete a key and paired value from db when button is selected
 app.post('/urls/:id/delete', (req, res) => {
-  console.log('delete Route Hit');
   const shortUrl = req.params.id;
-  console.log(shortUrl);
+  console.log(urlDatabase);
   if (urlDatabase[shortUrl]) {
     delete urlDatabase[shortUrl];
+    console.log(urlDatabase);
     return res.redirect('/urls');
   }
   res.send('The item was already deleted');
