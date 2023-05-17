@@ -57,19 +57,26 @@ app.post("/urls", (req, res) => {
   const shortUrl = generateString(6);
   //make sure input has the correct prefix
   if (longUrl.slice(0,7) !== "http://") {
-    console.log(longUrl.slice(0,7));
     if (longUrl.slice(0,8) !== "https://") {
       longUrl = "https://" + longUrl;
     }
-    
+
   }
   urlDatabase[shortUrl] = longUrl;
   console.log(urlDatabase);
   res.redirect(`/urls/${shortUrl}`); // redirect to page showing longUrl for input shortUrl
 });
 
+//EDIT take a key and change the paired value
+app.post('/urls/:id', (req, res) => {
+  const shortUrl = req.params.id;
+  urlDatabase[shortUrl] = req.body.longURL;
+  res.redirect('/urls');
+});
+
 // Delete a key and paired value from db when button is selected
 app.post('/urls/:id/delete', (req, res) => {
+  console.log('delete Route Hit');
   const shortUrl = req.params.id;
   console.log(shortUrl);
   if (urlDatabase[shortUrl]) {
