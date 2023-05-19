@@ -1,7 +1,5 @@
-const { users, characters, urlDatabase } = require("./database");
 
-
-const generateString = function(length) {
+const generateString = function(length, characters) {
   let result = '';
   const charactersLength = characters.length;
   for (let i = 0; i < length; i++) {
@@ -10,18 +8,17 @@ const generateString = function(length) {
   return result;
 };
 
-const findUserByEmail = function(userEmail) {
+const findUserByEmail = function(userEmail, users) {
   for (let user in users) {
     if (users[user]['email'] === userEmail) {
       return users[user];
     }
   }
-
-  return null;
+  return undefined;
 };
 
-const urlsForUser = function(userID) {
-  const currentUrls = {};
+const urlsForUser = function(userID, urlDatabase) {
+  let currentUrls = {};
   for (let element in urlDatabase) {
     if (urlDatabase[element].userID === userID) {
       currentUrls[element] = urlDatabase[element];

@@ -1,16 +1,7 @@
 
 //////////////////----------USERS----------//////////////
 const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "u@u.com",
-    password: "1234",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "dishwasher-funk",
-  },
+
 };
 
 //////////////////----------URLS----------//////////////

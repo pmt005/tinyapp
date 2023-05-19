@@ -3,7 +3,7 @@ const morgan = require('morgan');
 const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const { generateString, findUserByEmail, urlsForUser } = require("./helpers");
-const { users, urlDatabase } = require("./database");
+const { users, urlDatabase, characters } = require("./database");
 const app = express();
 const PORT = 8080; // default port 8080
 
@@ -37,12 +37,14 @@ app.get("/urls.json", (req, res) => {
 //show a urls_index page containing the info of the db
 app.get("/urls", (req, res) => {
   const userID = req.session.user_id;
-  if (!userID) {
+
+  if (!userID) { // FILTER OUT USERS THAT ARE NOT SIGNED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
   }
+
   const templateVars = {
-    urls: urlsForUser(userID),
-    user: users[req.session.user_id]
+    urls: urlsForUser(userID, urlDatabase),
+    user: users[userID]
   };
   
   res.render("urls_index", templateVars);
@@ -55,8 +57,10 @@ app.get("/hello", (req, res) => {
 
 //display the urls_new page if put into the path
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.session.user_id] };
-  if (!templateVars.user) {
+  const userID = req.session.user_id;
+  const templateVars = { user: users[userID] };
+  
+  if (!userID) { // FILTER OUT USERS THAT ARE NOT SIGNED IN
     return res.redirect("/login");
   }
   
@@ -95,9 +99,8 @@ app.get("/urls/:id", (req, res) => {
     return res.send("<html><body>shortUrl not found!</b></body></html>");
   }
 
+  const templateVars = { id: shortUrl, longUrl: urlDatabase[shortUrl].longURL, user: users[userID] };
   
-
-  const templateVars = { id: shortUrl, longUrl: urlDatabase[shortUrl].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars);
 });
 
@@ -105,8 +108,9 @@ app.get("/urls/:id", (req, res) => {
 // Create a new pair for the db
 app.post("/urls", (req, res) => {
   let longUrl = req.body.longURL;
-  const shortUrl = generateString(6);
+  const shortUrl = generateString(6, characters);
   const userID = req.session.user_id;
+  
 
   if (!userID) {
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
@@ -132,7 +136,7 @@ app.post("/urls", (req, res) => {
 app.post('/urls/:id', (req, res) => {
   const shortUrl = req.params.id;
   const userID = req.session.user_id;
-  const currentUserUrls = urlsForUser(userID);
+  const currentUserUrls = urlsForUser(userID, urlDatabase);
   
   if (!userID) { //FILTER NOT LOGGED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
@@ -147,6 +151,7 @@ app.post('/urls/:id', (req, res) => {
   }
 
   currentUserUrls[shortUrl].longURL = req.body.longURL;
+  urlDatabase[shortUrl].longURL = req.body.longURL;
   res.redirect('/urls');
 });
 
@@ -155,7 +160,7 @@ app.post('/urls/:id', (req, res) => {
 app.post('/urls/:id/delete', (req, res) => {
   const shortUrl = req.params.id;
   const userID = req.session.user_id;
-  const currentUserUrls = urlsForUser(userID);
+  const currentUserUrls = urlsForUser(userID, urlDatabase);
   
   
   if (!userID) { //FILTER NOT LOGGED IN
@@ -172,6 +177,7 @@ app.post('/urls/:id/delete', (req, res) => {
   }
 
   delete currentUserUrls[shortUrl];
+  delete urlDatabase[shortUrl];
   return res.redirect('/urls');
   
 });
@@ -190,12 +196,12 @@ app.get("/register", (req, res) => {
 
 // register new user
 app.post("/register", (req, res) => {
-  const id = generateString(8);
+  const id = generateString(8, characters);
   const newUserEmail = req.body.email;
   const newUserPassword = req.body.password;
   const newHashPass = bcrypt.hashSync(newUserPassword, 10);
 
-  const currentUser = findUserByEmail(newUserEmail);
+  const currentUser = findUserByEmail(newUserEmail, users);
 
   if (newUserEmail === "" || newUserPassword === "") { // Filter out empty input
     console.log(users);
@@ -234,9 +240,14 @@ app.get("/login", (req, res) => {
 app.post('/login', (req, res) => {
   const currentUserEmail = req.body.email;
   const currentUserPassword = req.body.password;
-  console.log(currentUserPassword);
-  const currentUser = findUserByEmail(currentUserEmail);
-  console.log(currentUser);
+
+  if (currentUserEmail === "" || currentUserPassword === "") { // Filter out empty input
+    console.log(users);
+    return res.status(401).send('Please enter a valid email and password');
+  }
+
+  const currentUser = findUserByEmail(currentUserEmail, users);
+  
   if (currentUser) {
     if (bcrypt.compareSync(currentUserPassword, currentUser.password)) {
       req.session['user_id'] = currentUser.id;
@@ -244,7 +255,7 @@ app.post('/login', (req, res) => {
     }
     return res.status(403).send(`<html><body> Password doesn't match :( </b></body></html> `);
   }
-  return res.status(403).send(`<html><body> Password doesn't match :( </b></body></html>   `);
+  return res.status(403).send(`<html><body> User Not Found :( </b></body></html>   `);
 });
 
 //logout
