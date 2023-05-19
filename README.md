@@ -18,6 +18,18 @@ An example user's short url page
 - bcryptjs
 - cookie-session
 
+## Functions
+- user registration
+- user login/logout with email and password
+- create new shortUrls for existing longUrls
+- view/edit/delete the user's own existing shortUrls
+- view others short Urls via the  urls/:id path
+  however you cannot edit these urls
+
+## Security
+- cookies are encrypted
+- passwords are hashed
+
 ## Getting Started
 
 - Install all dependencies (using the `npm install` command).
