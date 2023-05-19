@@ -5,10 +5,10 @@ TinyApp is a full stack web application built with Node and Express that allows 
 ## Final Product
 
 An example user's url page
-![An example user's url page](https://github.com/pmt005/tinyapp/blob/master/docs/User-Index.png?raw=true)(#)
+![An example user's url page](https://github.com/pmt005/tinyapp/blob/master/docs/User-Index.png?raw=true)
 
 An example user's short url page
-![An example user's short url page](https://github.com/pmt005/tinyapp/blob/master/docs/%20User-shortUrl.png?raw=true)(#)
+![An example user's short url page](https://github.com/pmt005/tinyapp/blob/master/docs/%20User-shortUrl.png?raw=true)
 
 
 
