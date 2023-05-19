@@ -1,6 +1,6 @@
 const express = require("express");
 const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bcrypt = require("bcryptjs");
 const { generateString, findUserByEmail, urlsForUser } = require("./helpers");
 const { users, urlDatabase } = require("./database");
@@ -12,8 +12,11 @@ app.set("view engine", "ejs");
 
 //MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(morgan('dev'));
+app.use(cookieSession({
+  name: 'tinyapp',
+  keys: ['asdfsadfsdf'],
+}));
 
 
 
@@ -33,13 +36,13 @@ app.get("/urls.json", (req, res) => {
 
 //show a urls_index page containing the info of the db
 app.get("/urls", (req, res) => {
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
   if (!userID) {
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
   }
   const templateVars = {
     urls: urlsForUser(userID),
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
   
   res.render("urls_index", templateVars);
@@ -52,7 +55,7 @@ app.get("/hello", (req, res) => {
 
 //display the urls_new page if put into the path
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]] };
+  const templateVars = { user: users[req.session.user_id] };
   if (!templateVars.user) {
     return res.redirect("/login");
   }
@@ -82,7 +85,7 @@ or send not found notification
 */
 app.get("/urls/:id", (req, res) => {
   const shortUrl = req.params.id;
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
 
   if (!userID) { //FILTER NOT LOGGED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
@@ -103,8 +106,9 @@ app.get("/urls/:id", (req, res) => {
 app.post("/urls", (req, res) => {
   let longUrl = req.body.longURL;
   const shortUrl = generateString(6);
+  const userID = req.session.user_id;
 
-  if (!req.cookies["user_id"]) {
+  if (!userID) {
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
   }
 
@@ -117,7 +121,7 @@ app.post("/urls", (req, res) => {
  
   urlDatabase[shortUrl] = {
     longURL: longUrl,
-    userID: req.cookies["user_id"],
+    userID: req.session.user_id,
   };
 
   res.redirect(`/urls/${shortUrl}`); // redirect to page showing longUrl for input shortUrl
@@ -127,8 +131,8 @@ app.post("/urls", (req, res) => {
 //EDIT take a key and change the paired value
 app.post('/urls/:id', (req, res) => {
   const shortUrl = req.params.id;
-  const currentUserUrls = urlsForUser(req.cookies["user_id"]);
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
+  const currentUserUrls = urlsForUser(userID);
   
   if (!userID) { //FILTER NOT LOGGED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
@@ -150,8 +154,9 @@ app.post('/urls/:id', (req, res) => {
 // Delete a key and paired value from db when button is selected
 app.post('/urls/:id/delete', (req, res) => {
   const shortUrl = req.params.id;
-  const currentUserUrls = urlsForUser(req.cookies["user_id"]);
-  const userID = req.cookies["user_id"];
+  const userID = req.session.user_id;
+  const currentUserUrls = urlsForUser(userID);
+  
   
   if (!userID) { //FILTER NOT LOGGED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
@@ -175,7 +180,7 @@ app.post('/urls/:id/delete', (req, res) => {
 app.get("/register", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session.user_id]
   };
   if (templateVars.user) {
     return res.render("urls_index", templateVars);
@@ -208,7 +213,7 @@ app.post("/register", (req, res) => {
     password: newHashPass
   };
 
-  res.cookie('user_id', id);
+  req.session['user_id'] = id;
   res.redirect("/urls");
 
 });
@@ -217,7 +222,7 @@ app.post("/register", (req, res) => {
 app.get("/login", (req, res) => {
   const templateVars = {
     urls: urlDatabase,
-    user: users[req.cookies["user_id"]]
+    user: users[req.session["user_id"]]
   };
   if (templateVars.user) {
     return res.render("urls_index", templateVars);
@@ -234,7 +239,7 @@ app.post('/login', (req, res) => {
   console.log(currentUser);
   if (currentUser) {
     if (bcrypt.compareSync(currentUserPassword, currentUser.password)) {
-      res.cookie('user_id',currentUser.id);
+      req.session['user_id'] = currentUser.id;
       return res.redirect('/urls');
     }
     return res.status(403).send(`<html><body> Password doesn't match :( </b></body></html> `);
@@ -244,7 +249,7 @@ app.post('/login', (req, res) => {
 
 //logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/login');
 });
 
