@@ -20,6 +20,3 @@ const urlDatabase = {
 const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
 module.exports = { users, urlDatabase, characters };
-
-// <% if (urls[id].userID === user) { %>
-// <% } %>
