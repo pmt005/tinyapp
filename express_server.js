@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const bcrypt = require("bcryptjs");
 const { generateString, findUserByEmail, urlsForUser } = require("./helpers");
 const { users, urlDatabase } = require("./database");
 const app = express();
@@ -187,6 +188,8 @@ app.post("/register", (req, res) => {
   const id = generateString(8);
   const newUserEmail = req.body.email;
   const newUserPassword = req.body.password;
+  const newHashPass = bcrypt.hashSync(newUserPassword, 10);
+
   const currentUser = findUserByEmail(newUserEmail);
 
   if (newUserEmail === "" || newUserPassword === "") { // Filter out empty input
@@ -202,7 +205,7 @@ app.post("/register", (req, res) => {
   users[id] = {
     id: id,
     email: newUserEmail,
-    password: newUserPassword
+    password: newHashPass
   };
 
   res.cookie('user_id', id);
@@ -230,7 +233,7 @@ app.post('/login', (req, res) => {
   const currentUser = findUserByEmail(currentUserEmail);
   console.log(currentUser);
   if (currentUser) {
-    if (currentUserPassword === currentUser.password) {
+    if (bcrypt.compareSync(currentUserPassword, currentUser.password)) {
       res.cookie('user_id',currentUser.id);
       return res.redirect('/urls');
     }
