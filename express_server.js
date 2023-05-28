@@ -26,8 +26,21 @@ app.use(cookieSession({
 
 //show hello message
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  const userID = req.session.user_id;
+
+  if (!userID) { // FILTER OUT USERS THAT ARE NOT SIGNED IN
+    return res.redirect("/login");
+  }
+
+  const templateVars = {
+    urls: urlsForUser(userID, urlDatabase),
+    user: users[userID]
+  };
+  
+  res.render("urls_index", templateVars);
 });
+
+
 
 //return the json string of the db
 app.get("/urls.json", (req, res) => {
@@ -74,6 +87,11 @@ and redirect to the paired longUrl or send not found notification
  */
 app.get("/u/:id", (req, res) => {
   const shortUrl = req.params.id;
+  const userID = req.session.user_id;
+
+  if (!userID) { // FILTER OUT USERS THAT ARE NOT SIGNED IN
+    return res.redirect("/login");
+  }
   
   if (!urlDatabase[shortUrl]) {
     res.send("<html><body>shortUrl not found!</b></body></html>");
@@ -90,13 +108,18 @@ or send not found notification
 app.get("/urls/:id", (req, res) => {
   const shortUrl = req.params.id;
   const userID = req.session.user_id;
+  const currentUserUrls = urlsForUser(userID, urlDatabase);
 
   if (!userID) { //FILTER NOT LOGGED IN
     return res.send("<html><body>You must be logged in to use this feature</b></body></html>");
   }
   
-  if (!urlDatabase[shortUrl]) { //FILTER NOT FOUND SHORT URL
-    return res.send("<html><body>shortUrl not found!</b></body></html>");
+  if ((!currentUserUrls[shortUrl]) && (urlDatabase[shortUrl])) { //FILTER URL NOT OWNED
+    return res.send("<html><body>This is not your URL</b></body></html>");
+  }
+
+  if (!currentUserUrls[shortUrl]) { //FILTER URL NOT FOUND
+    return res.send("<html><body>URL not found</b></body></html>");
   }
 
   const templateVars = { id: shortUrl, longUrl: urlDatabase[shortUrl].longURL, user: users[userID] };
@@ -210,7 +233,7 @@ app.post("/register", (req, res) => {
   }
 
   if (currentUser) {
-    return res.status(401).send(`User: ${currentUser.id} already exists`);
+    return res.status(401).send(`User already exists`);
   }
 
   users[id] = {
@@ -220,15 +243,18 @@ app.post("/register", (req, res) => {
   };
 
   req.session['user_id'] = id;
+
+
   res.redirect("/urls");
 
 });
 
 // render login page
 app.get("/login", (req, res) => {
+  const userID = req.session.user_id;
   const templateVars = {
-    urls: urlDatabase,
-    user: users[req.session["user_id"]]
+    urls: urlsForUser(userID,urlDatabase),
+    user: userID
   };
   if (templateVars.user) {
     return res.render("urls_index", templateVars);
